@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 from random import randint
+from random import uniform
+import operator
+import math
 gene = {}
 
 def initialize():
@@ -39,32 +42,116 @@ def crossover(male, female):
 def translate(chromosome):
     pass
 
-def fitness_func(population):
-    pass
+def selection(fitness, population_fitness):
+    while True:
+        male = _select(fitness, population_fitness)
+        female = _select(fitness, population_fitness)
+        if male != female:
+            return male, female
+
+
+def _select(fitness, population_fitness):
+    #every we random choose a value between the smallest value in fitness - 0.1
+    #because we don't want this random value largely sitting smaller than the smallest
+    value = uniform(min(fitness) - 0.1, max(fitness))
+    for i, fit in enumerate(fitness):
+        if i == 0:
+            temp = fit
+        if value > fit:
+            break
+        else:
+            temp = fit
+    return temp
+
+
+
+def calculate_fitness(population, target):
+    population_fitness = {}
+    for chromosome in population:
+        chromo_cut = cut_chromosome(chromosome)
+        equation = generate_equation(chromo_cut)
+        summ = _calculate(equation)
+        if summ == 0.0:
+            population_fitness[chromosome] = None
+            continue
+        fitness = _calculate_fitness(summ, target)
+        population_fitness[chromosome] = fitness
+    population_fitness = roulette_wheel(population_fitness)
+    return population_fitness
+
+def roulette_wheel(population_fitness):
+    summ = 0
+    for chromosome, fitness in population_fitness.items():
+        if fitness == None:
+            continue
+        summ += fitness
+        population_fitness[chromosome] = summ
+    sorted(population_fitness.items(), key = lambda d: d[1])
+    return population_fitness
+
+def _calculate_fitness(summ, target):
+    if summ == None:
+        return None
+    try:
+        fitness = abs(1.0 / (target - summ))
+    except ZeroDivisionError:
+        return 0
+    return fitness
+def _calculate(equation):
+    i = 0
+    while True:
+        try:
+            item = equation.pop(0)
+            if i == 0:
+                summ = item
+            if item == '+':
+                summ += equation.pop(0)
+            elif item == '-':
+                summ -= equation.pop(0)
+            elif item == '*':
+                summ *= equation.pop(0)
+            elif item == '/':
+                value = equation.pop(0)
+                if value == 0:
+                    return None
+                summ /= value
+            i += 1
+        except IndexError:
+            return float(summ)
 
 def cut_chromosome(chromosome):
     chromo = []
     for i in xrange(9):
         chromo.append(chromosome[0 + i * 4: 4 + i * 4])
     return chromo
-def test_chromosome(chromo_cut):
+def generate_equation(chromo_cut):
     global gene
-    foo = []
-    for i, item in enumerate(chromo_cut):
+    equation = []
+    temp = None
+    for item in chromo_cut:
         if not gene.has_key(item):
             continue
-        if i == 0:
+        if temp == None:
             temp = gene[item]
             if type(temp) is type(5):
-                foo.append(temp)
+                equation.append(temp)
             continue
         if type(temp) is not type(gene[item]):
             temp = gene[item]
-            foo.append(temp)
-    return foo
+            equation.append(temp)
+    if type(equation[-1]) is type('+'):
+        equation.pop(-1)
+    return equation
 
 if __name__ == "__main__":
     initialize()
-    print generate_population()
-    chromo_cut = cut_chromosome("011000001111010111001110110101110011")
-    print test_chromosome(chromo_cut)
+    target = 42
+    population = generate_population()
+    population_fitness = calculate_fitness(population, target)
+    for chromosome, fitness in population_fitness.items():
+        print chromosome, fitness
+    fitness_list = [fitness for fitness 
+                    in population_fitness.values() if fitness != None]
+    fitness_list.reverse()
+    male, female = selection(fitness_list, population_fitness)
+    print male, female
