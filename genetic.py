@@ -2,7 +2,6 @@
 from random import randint
 from random import uniform
 import operator
-import math
 gene = {}
 
 def initialize():
@@ -51,9 +50,7 @@ def selection(fitness, population_fitness):
 
 
 def _select(fitness, population_fitness):
-    #every we random choose a value between the smallest value in fitness - 0.1
-    #because we don't want this random value largely sitting smaller than the smallest
-    value = uniform(min(fitness) - 0.1, max(fitness))
+    value = uniform(0, max(fitness))
     for i, fit in enumerate(fitness):
         if i == 0:
             temp = fit
@@ -61,9 +58,9 @@ def _select(fitness, population_fitness):
             break
         else:
             temp = fit
-    return temp
-
-
+    for key, value in population_fitness.items():
+        if value == temp:
+            return key
 
 def calculate_fitness(population, target):
     population_fitness = {}
