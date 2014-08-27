@@ -33,13 +33,36 @@ def generate_gene():
     return ''.join(gene)
 
 def mutate(chromosome):
-    pass
+    mutate_rate = 0.01
+    new_chromo = []
+    for code in chromosome:
+        if uniform(0, 1) > mutate_rate:
+            new_chromo.append(code)
+        else:
+            if code == '0':
+                new_chromo.append('1')
+            else:
+                new_chromo.append('0')
+    return ''.join(new_chromo)
 
 def crossover(male, female):
-    pass
+    defined_crossover = 0.7
+    rand_cross_point = randint(0, len(male))
+    crossover_rate = uniform(0, 1)
+    if crossover_rate < defined_crossover:
+        return _cross(male, female, rand_cross_point)
+    else:
+        child_list = []
+        child_list.append(male)
+        return child_list
 
-def translate(chromosome):
-    pass
+def _cross(male, female, cut_point):
+    child_list = []
+    child_1 = male[0:cut_point] + female[cut_point:]
+    child_2 = female[0:cut_point] + male[cut_point:]
+    child_list.append(child_1)
+    child_list.append(child_2)
+    return child_list
 
 def selection(fitness, population_fitness):
     while True:
@@ -67,6 +90,9 @@ def calculate_fitness(population, target):
     for chromosome in population:
         chromo_cut = cut_chromosome(chromosome)
         equation = generate_equation(chromo_cut)
+        if equation == None:
+            population_fitness[chromosome] = None
+            continue
         summ = _calculate(equation)
         if summ == 0.0:
             population_fitness[chromosome] = None
@@ -87,12 +113,13 @@ def roulette_wheel(population_fitness):
     return population_fitness
 
 def _calculate_fitness(summ, target):
+    #print summ
     if summ == None:
         return None
     try:
         fitness = abs(1.0 / (target - summ))
     except ZeroDivisionError:
-        return 0
+        return 99
     return fitness
 def _calculate(equation):
     i = 0
@@ -136,19 +163,38 @@ def generate_equation(chromo_cut):
         if type(temp) is not type(gene[item]):
             temp = gene[item]
             equation.append(temp)
-    if type(equation[-1]) is type('+'):
-        equation.pop(-1)
+    try:
+        if type(equation[-1]) is type('+'):
+            equation.pop(-1)
+    except IndexError:
+        return None
     return equation
 
-if __name__ == "__main__":
+def evolve(target):
     initialize()
-    target = 42
     population = generate_population()
-    population_fitness = calculate_fitness(population, target)
-    for chromosome, fitness in population_fitness.items():
-        print chromosome, fitness
-    fitness_list = [fitness for fitness 
-                    in population_fitness.values() if fitness != None]
-    fitness_list.reverse()
-    male, female = selection(fitness_list, population_fitness)
-    print male, female
+    count = 0
+    while True:
+        population_fitness = calculate_fitness(population, target)
+        for chromosome, fitness in population_fitness.items():
+            if fitness >= 99:
+                return chromosome, fitness
+        fitness_list = [fitness for fitness 
+                        in population_fitness.values() if fitness != None]
+        fitness_list.reverse()
+        del population[:]
+        for i in xrange(6):
+            child_list = []
+            male, female = selection(fitness_list, population_fitness)
+            children = crossover(male, female)
+            for child in children:
+                child = mutate(child)
+                child_list.append(child)
+            population.extend(child_list)
+        #print "number of children = ", len(population)
+        print "Generation: ", count
+        count += 1
+
+if __name__ == "__main__":
+    target = 42
+    print evolve(target)
