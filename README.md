@@ -1,4 +1,4 @@
-Genetic_programming
+Genetic_algorithm
 ===================
 
-Genetic_programming practice using python
+Genetic_algorithm practice using python
