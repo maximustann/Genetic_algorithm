@@ -1,4 +1,5 @@
 Genetic_algorithm
 ===================
 
-Genetic_algorithm practice using python
+Genetic algorithm practice using python
+The code is working.
